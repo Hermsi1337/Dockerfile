@@ -3,7 +3,7 @@
 #    -- automatically generated  --
 #+++++++++++++++++++++++++++++++++++++++
 
-FROM webdevops/base:alpine
+FROM ghcr.io/hermsi1337/dockerfiles/base:alpine
 
 ENV APPLICATION_USER=application \
     APPLICATION_GROUP=application \

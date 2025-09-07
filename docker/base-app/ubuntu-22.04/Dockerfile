@@ -3,7 +3,7 @@
 #    -- automatically generated  --
 #+++++++++++++++++++++++++++++++++++++++
 
-FROM webdevops/base:ubuntu-22.04
+FROM ghcr.io/hermsi1337/dockerfiles/base:ubuntu-22.04
 
 ENV APPLICATION_USER=application \
     APPLICATION_GROUP=application \

@@ -1,4 +1,4 @@
-{% macro from(image, tag="latest", user="webdevops") -%}
+{% macro from(image, tag="latest", user="ghcr.io/hermsi1337/dockerfiles") -%}
 FROM {{ user }}/{{ image }}:{{ tag }}
 {%- endmacro %}
 

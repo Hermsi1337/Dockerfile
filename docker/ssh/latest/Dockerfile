@@ -3,7 +3,7 @@
 #    -- automatically generated  --
 #+++++++++++++++++++++++++++++++++++++++
 
-FROM webdevops/base-app:latest
+FROM ghcr.io/hermsi1337/dockerfiles/base-app:latest
 
 RUN set -x \
     && docker-service enable ssh \

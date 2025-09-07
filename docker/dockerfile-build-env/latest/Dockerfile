@@ -3,7 +3,7 @@
 #    -- automatically generated  --
 #+++++++++++++++++++++++++++++++++++++++
 
-FROM webdevops/base-app:ubuntu-22.04
+FROM ghcr.io/hermsi1337/dockerfiles/base-app:ubuntu-22.04
 
 RUN apt-install \
         build-essential \

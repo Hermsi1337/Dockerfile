@@ -3,7 +3,7 @@
 #    -- automatically generated  --
 #+++++++++++++++++++++++++++++++++++++++
 
-FROM webdevops/php:7.0
+FROM ghcr.io/hermsi1337/dockerfiles/php:7.0
 
 COPY conf/ /opt/docker/
 

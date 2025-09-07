@@ -3,7 +3,7 @@
 #    -- automatically generated  --
 #+++++++++++++++++++++++++++++++++++++++
 
-FROM webdevops/php:7.1
+FROM ghcr.io/hermsi1337/dockerfiles/php:7.1
 
 ENV WEB_DOCUMENT_ROOT=/app \
     WEB_DOCUMENT_INDEX=index.php \
@@ -23,7 +23,7 @@ RUN set -x \
         s!^(\s*ErrorLog)\s+\S+!\1 /proc/self/fd/2!g; \
         ' /etc/apache2/apache2.conf \
     && rm -f /etc/apache2/sites-enabled/* \
-    && a2enmod actions proxy proxy_fcgi ssl rewrite headers expires \
+    && a2enmod actions proxy proxy_fcgi ssl rewrite headers expires remoteip \
     && docker-run-bootstrap \
     && docker-image-cleanup
 

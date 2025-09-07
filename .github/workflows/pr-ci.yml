@@ -1,0 +1,409 @@
+name: PR CI (mirror of GitLab steps, no push)
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Einheitlicher Container für alle Jobs, wie in GitLab-CI
+x-job-container: &job_container
+  image: webdevops/dockerfile-build-env:latest
+  options: >-
+    --volume /var/run/docker.sock:/var/run/docker.sock
+
+# -------------------------------- STAGE: level1 --------------------------------
+webdevops_toolbox_latest:
+  name: 'webdevops/toolbox:latest'
+  runs-on: ubuntu-latest
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build (exact)
+      working-directory: docker/toolbox/latest
+      run: docker build --no-cache -t webdevops/toolbox:latest .
+
+# -------------------------------- STAGE: level2 --------------------------------
+webdevops_bootstrap_alpine:
+  name: 'webdevops/bootstrap:alpine'
+  runs-on: ubuntu-latest
+  needs: [webdevops_toolbox_latest]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/bootstrap/alpine
+      run: docker build --no-cache -t webdevops/bootstrap:alpine .
+    - name: Serverspec
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/bootstrap:alpine" >> Dockerfile_67b33780216a78.44838910
+        echo "COPY conf/ /" >> Dockerfile_67b33780216a78.44838910
+        bundle install
+        bash serverspec.sh spec/docker/bootstrap_spec.rb webdevops/bootstrap:alpine eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL2Jvb3RzdHJhcDphbHBpbmUiLCJET0NLRVJfVEFHIjoiYWxwaW5lIiwiT1NfRkFNSUxZIjoiYWxwaW5lIiwiT1NfVkVSU0lPTiI6IiIsIkRPQ0tFUkZJTEUiOiJEb2NrZXJmaWxlXzY3YjMzNzgwMjE2YTc4LjQ0ODM4OTEwIn0=  Dockerfile_67b33780216a78.44838910
+    - name: Structure tests
+      run: |
+        cd tests/structure-test
+        /usr/local/bin/container-structure-test test --image webdevops/bootstrap:alpine --config bootstrap/test.yaml --config bootstrap/alpine/test.yaml
+
+webdevops_bootstrap_ubuntu_22_04:
+  name: 'webdevops/bootstrap:ubuntu-22.04'
+  runs-on: ubuntu-latest
+  needs: [webdevops_toolbox_latest]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/bootstrap/ubuntu-22.04
+      run: docker build --no-cache -t webdevops/bootstrap:ubuntu-22.04 .
+    - name: Serverspec
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/bootstrap:ubuntu-22.04" >> Dockerfile_67b33780214e35.25363639
+        echo "COPY conf/ /" >> Dockerfile_67b33780214e35.25363639
+        bundle install
+        bash serverspec.sh spec/docker/bootstrap_spec.rb webdevops/bootstrap:ubuntu-22.04 eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL2Jvb3RzdHJhcDp1YnVudHUtMjIuMDQiLCJET0NLRVJfVEFHIjoidWJ1bnR1LTIyLjA0IiwiT1NfRkFNSUxZIjoidWJ1bnR1IiwiT1NfVkVSU0lPTiI6IjIyLjA0IiwiRE9DS0VSRklMRSI6IkRvY2tlcmZpbGVfNjdiMzM3ODAyMTRlMzUuMjUzNjM2MzkifQ==  Dockerfile_67b33780214e35.25363639
+    - name: Structure tests
+      run: |
+        cd tests/structure-test
+        /usr/local/bin/container-structure-test test --image webdevops/bootstrap:ubuntu-22.04 --config bootstrap/test.yaml
+
+webdevops_php_8_1:
+  name: 'webdevops/php:8.1'
+  runs-on: ubuntu-latest
+  needs: [webdevops_toolbox_latest]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/php-official/8.1
+      run: docker build --no-cache -t webdevops/php:8.1 .
+    - name: Serverspec
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/php:8.1" >> Dockerfile_67b3378024f8d2.27347713
+        echo "COPY conf/ /" >> Dockerfile_67b3378024f8d2.27347713
+        bundle install
+        bash serverspec.sh spec/docker/php_spec.rb webdevops/php:8.1 eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL3BocC1vZmZpY2lhbDo4LjEiLCJET0NLRVJfVEFHIjoiOC4xIiwiT1NfRkFNSUxZIjoiZGViaWFuIiwiT1NfVkVSU0lPTiI6IjEyIiwiUEhQX09GRklDSUFMIjoiMSIsIkRPQ0tFUkZJTEUiOiJEb2NrZXJmaWxlXzY3YjMzNzgwMjRmOGQyLjI3MzQ3NzEzIn0=  Dockerfile_67b3378024f8d2.27347713
+    - name: Structure tests
+      run: |
+        cd tests/structure-test
+        /usr/local/bin/container-structure-test test --image webdevops/php:8.1 --config php/test.yaml
+
+webdevops_php_8_1_alpine:
+  name: 'webdevops/php:8.1-alpine'
+  runs-on: ubuntu-latest
+  needs: [webdevops_toolbox_latest]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/php-official/8.1-alpine
+      run: docker build --no-cache -t webdevops/php:8.1-alpine .
+    - name: Serverspec
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/php:8.1-alpine" >> Dockerfile_67b3378023dc34.89923799
+        echo "COPY conf/ /" >> Dockerfile_67b3378023dc34.89923799
+        bundle install
+        bash serverspec.sh spec/docker/php_spec.rb webdevops/php:8.1-alpine eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL3BocC1vZmZpY2lhbDo4LjEtYWxwaW5lIiwiRE9DS0VSX1RBRyI6IjguMS1hbHBpbmUiLCJPU19GQU1JTFkiOiJhbHBpbmUiLCJPU19WRVJTSU9OIjoiMyIsIlBIUF9PRkZJQ0lBTCI6IjEiLCJET0NLRVJGSUxFIjoiRG9ja2VyZmlsZV82N2IzMzc4MDIzZGMzNC44OTkyMzc5OSJ9  Dockerfile_67b3378023dc34.89923799
+    - name: Structure tests
+      run: |
+        cd tests/structure-test
+        /usr/local/bin/container-structure-test test --image webdevops/php:8.1-alpine --config php/test.yaml
+
+webdevops_php_8_2:
+  name: 'webdevops/php:8.2'
+  runs-on: ubuntu-latest
+  needs: [webdevops_toolbox_latest]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/php-official/8.2
+      run: docker build --no-cache -t webdevops/php:8.2 .
+    - name: Serverspec
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/php:8.2" >> Dockerfile_67b33780224305.94882603
+        echo "COPY conf/ /" >> Dockerfile_67b33780224305.94882603
+        bundle install
+        bash serverspec.sh spec/docker/php_spec.rb webdevops/php:8.2 eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL3BocC1vZmZpY2lhbDo4LjIiLCJET0NLRVJfVEFHIjoiOC4yIiwiT1NfRkFNSUxZIjoiZGViaWFuIiwiT1NfVkVSU0lPTiI6IjEyIiwiUEhQX09GRklDSUFMIjoiMSIsIkRPQ0tFUkZJTEUiOiJEb2NrZXJmaWxlXzY3YjMzNzgwMjI0MzA1Ljk0ODgyNjAzIn0=  Dockerfile_67b33780224305.94882603
+    - name: Structure tests
+      run: |
+        cd tests/structure-test
+        /usr/local/bin/container-structure-test test --image webdevops/php:8.2 --config php/test.yaml
+
+webdevops_php_8_2_alpine:
+  name: 'webdevops/php:8.2-alpine'
+  runs-on: ubuntu-latest
+  needs: [webdevops_toolbox_latest]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/php-official/8.2-alpine
+      run: docker build --no-cache -t webdevops/php:8.2-alpine .
+    - name: Serverspec
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/php:8.2-alpine" >> Dockerfile_67b3378022db19.74137044
+        echo "COPY conf/ /" >> Dockerfile_67b3378022db19.74137044
+        bundle install
+        bash serverspec.sh spec/docker/php_spec.rb webdevops/php:8.2-alpine eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL3BocC1vZmZpY2lhbDo4LjItYWxwaW5lIiwiRE9DS0VSX1RBRyI6IjguMi1hbHBpbmUiLCJPU19GQU1JTFkiOiJhbHBpbmUiLCJPU19WRVJTSU9OIjoiMyIsIlBIUF9PRkZJQ0lBTCI6IjEiLCJET0NLRVJGSUxFIjoiRG9ja2VyZmlsZV82N2IzMzc4MDIyZGIxOS43NDEzNzA0NCJ9  Dockerfile_67b3378022db19.74137044
+    - name: Structure tests
+      run: |
+        cd tests/structure-test
+        /usr/local/bin/container-structure-test test --image webdevops/php:8.2-alpine --config php/test.yaml
+
+webdevops_php_8_3:
+  name: 'webdevops/php:8.3'
+  runs-on: ubuntu-latest
+  needs: [webdevops_toolbox_latest]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/php-official/8.3
+      run: docker build --no-cache -t webdevops/php:8.3 .
+    - name: Serverspec
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/php:8.3" >> Dockerfile_67b33780226889.37238216
+        echo "COPY conf/ /" >> Dockerfile_67b33780226889.37238216
+        bundle install
+        bash serverspec.sh spec/docker/php_spec.rb webdevops/php:8.3 eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL3BocC1vZmZpY2lhbDo4LjMiLCJET0NLRVJfVEFHIjoiOC4zIiwiT1NfRkFNSUxZIjoiZGViaWFuIiwiT1NfVkVSU0lPTiI6IjEyIiwiUEhQX09GRklDSUFMIjoiMSIsIkRPQ0tFUkZJTEUiOiJEb2NrZXJmaWxlXzY3YjMzNzgwMjI2ODg5LjM3MjM4MjE2In0=  Dockerfile_67b33780226889.37238216
+    - name: Structure tests
+      run: |
+        cd tests/structure-test
+        /usr/local/bin/container-structure-test test --image webdevops/php:8.3 --config php/test.yaml
+
+webdevops_php_8_3_alpine:
+  name: 'webdevops/php:8.3-alpine'
+  runs-on: ubuntu-latest
+  needs: [webdevops_toolbox_latest]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/php-official/8.3-alpine
+      run: docker build --no-cache -t webdevops/php:8.3-alpine .
+    - name: Serverspec
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/php:8.3-alpine" >> Dockerfile_67b33780222417.04342489
+        echo "COPY conf/ /" >> Dockerfile_67b33780222417.04342489
+        bundle install
+        bash serverspec.sh spec/docker/php_spec.rb webdevops/php:8.3-alpine eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL3BocC1vZmZpY2lhbDo4LjMtYWxwaW5lIiwiRE9DS0VSX1RBRyI6IjguMy1hbHBpbmUiLCJPU19GQU1JTFkiOiJhbHBpbmUiLCJPU19WRVJTSU9OIjoiMyIsIlBIUF9PRkZJQ0lBTCI6IjEiLCJET0NLRVJGSUxFIjoiRG9ja2VyZmlsZV82N2IzMzc4MDIyMjQxNy4wNDM0MjQ4OSJ9  Dockerfile_67b33780222417.04342489
+    - name: Structure tests
+      run: |
+        cd tests/structure-test
+        /usr/local/bin/container-structure-test test --image webdevops/php:8.3-alpine --config php/test.yaml
+
+webdevops_php_8_4:
+  name: 'webdevops/php:8.4'
+  runs-on: ubuntu-latest
+  needs: [webdevops_toolbox_latest]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/php-official/8.4
+      run: docker build --no-cache -t webdevops/php:8.4 .
+    - name: Serverspec
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/php:8.4" >> Dockerfile_67b33780240537.39972307
+        echo "COPY conf/ /" >> Dockerfile_67b33780240537.39972307
+        bundle install
+        bash serverspec.sh spec/docker/php_spec.rb webdevops/php:8.4 eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL3BocC1vZmZpY2lhbDo4LjQiLCJET0NLRVJfVEFHIjoiOC40IiwiT1NfRkFNSUxZIjoiZGViaWFuIiwiT1NfVkVSU0lPTiI6IjEyIiwiUEhQX09GRklDSUFMIjoiMSIsIkRPQ0tFUkZJTEUiOiJEb2NrZXJmaWxlXzY3YjMzNzgwMjQwNTM3LjM5OTcyMzA3In0=  Dockerfile_67b33780240537.39972307
+    - name: Structure tests
+      run: |
+        cd tests/structure-test
+        /usr/local/bin/container-structure-test test --image webdevops/php:8.4 --config php/test.yaml
+
+webdevops_php_8_4_alpine:
+  name: 'webdevops/php:8.4-alpine'
+  runs-on: ubuntu-latest
+  needs: [webdevops_toolbox_latest]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/php-official/8.4-alpine
+      run: docker build --no-cache -t webdevops/php:8.4-alpine .
+    - name: Serverspec
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/php:8.4-alpine" >> Dockerfile_67b33780220d09.67839072
+        echo "COPY conf/ /" >> Dockerfile_67b33780220d09.67839072
+        bundle install
+        bash serverspec.sh spec/docker/php_spec.rb webdevops/php:8.4-alpine eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL3BocC1vZmZpY2lhbDo4LjQtYWxwaW5lIiwiRE9DS0VSX1RBRyI6IjguNC1hbHBpbmUiLCJPU19GQU1JTFkiOiJhbHBpbmUiLCJPU19WRVJTSU9OIjoiMyIsIlBIUF9PRkZJQ0lBTCI6IjEiLCJET0NLRVJGSUxFIjoiRG9ja2VyZmlsZV82N2IzMzc4MDIyMGQwOS42NzgzOTA3MiJ9  Dockerfile_67b33780220d09.67839072
+    - name: Structure tests
+      run: |
+        cd tests/structure-test
+        /usr/local/bin/container-structure-test test --image webdevops/php:8.4-alpine --config php/test.yaml
+
+webdevops_storage_latest:
+  name: 'webdevops/storage:latest'
+  runs-on: ubuntu-latest
+  needs: [webdevops_toolbox_latest]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/storage/latest
+      run: docker build --no-cache -t webdevops/storage:latest .
+
+# -------------------------------- STAGE: level3 (Auswahl) --------------------------------
+webdevops_base_alpine:
+  name: 'webdevops/base:alpine'
+  runs-on: ubuntu-latest
+  needs: [webdevops_bootstrap_alpine]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/base/alpine
+      run: docker build --no-cache -t webdevops/base:alpine .
+    - name: Serverspec
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/base:alpine" >> Dockerfile_67b33780216ee1.41883577
+        echo "COPY conf/ /" >> Dockerfile_67b33780216ee1.41883577
+        bundle install
+        bash serverspec.sh spec/docker/base_spec.rb webdevops/base:alpine eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL2Jhc2U6YWxwaW5lIiwiRE9DS0VSX1RBRyI6ImFscGluZSIsIk9TX0ZBTUlMWSI6ImFscGluZSIsIk9TX1ZFUlNJT04iOiIiLCJET0NLRVJGSUxFIjoiRG9ja2VyZmlsZV82N2IzMzc4MDIxNmVlMS40MTg4MzU3NyJ9  Dockerfile_67b33780216ee1.41883577
+    - name: Structure tests
+      run: |
+        cd tests/structure-test
+        /usr/local/bin/container-structure-test test --image webdevops/base:alpine --config base/test.yaml --config base/alpine/test.yaml
+
+webdevops_base_ubuntu_22_04:
+  name: 'webdevops/base:ubuntu-22.04'
+  runs-on: ubuntu-latest
+  needs: [webdevops_bootstrap_ubuntu_22_04]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/base/ubuntu-22.04
+      run: docker build --no-cache -t webdevops/base:ubuntu-22.04 .
+    - name: Serverspec
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/base:ubuntu-22.04" >> Dockerfile_67b33780215452.09106799
+        echo "COPY conf/ /" >> Dockerfile_67b33780215452.09106799
+        bundle install
+        bash serverspec.sh spec/docker/base_spec.rb webdevops/base:ubuntu-22.04 eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL2Jhc2U6dWJ1bnR1LTIyLjA0IiwiRE9DS0VSX1RBRyI6InVidW50dS0yMi4wNCIsIk9TX0ZBTUlMWSI6InVidW50dSIsIk9TX1ZFUlNJT04iOiIyMi4wNCIsIkRPQ0tFUkZJTEUiOiJEb2NrZXJmaWxlXzY3YjMzNzgwMjE1NDUyLjA5MTA2Nzk5In0=  Dockerfile_67b33780215452.09106799
+    - name: Structure tests
+      run: |
+        cd tests/structure-test
+        /usr/local/bin/container-structure-test test --image webdevops/base:ubuntu-22.04 --config base/test.yaml
+
+# -------------------------------- STAGE: level4 (kleine Auswahl zum Start) --------------------------------
+webdevops_nginx_alpine:
+  name: 'webdevops/nginx:alpine'
+  runs-on: ubuntu-latest
+  needs: [webdevops_base_alpine]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/nginx/alpine
+      run: docker build --no-cache -t webdevops/nginx:alpine .
+    - name: Serverspec
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/nginx:alpine" >> Dockerfile_67b33780217a03.35196981
+        echo "COPY conf/ /" >> Dockerfile_67b33780217a03.35196981
+        bundle install
+        bash serverspec.sh spec/docker/nginx_spec.rb webdevops/nginx:alpine eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL25naW54OmFscGluZSIsIkRPQ0tFUl9UQUciOiJhbHBpbmUiLCJPU19GQU1JTFkiOiJhbHBpbmUiLCJPU19WRVJTSU9OIjoiIiwiRE9DS0VSRklMRSI6IkRvY2tlcmZpbGVfNjdiMzM3ODAyMTdhMDMuMzUxOTY5ODEifQ==  Dockerfile_67b33780217a03.35196981
+
+webdevops_apache_alpine:
+  name: 'webdevops/apache:alpine'
+  runs-on: ubuntu-latest
+  needs: [webdevops_base_alpine]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/apache/alpine
+      run: docker build --no-cache -t webdevops/apache:alpine .
+    - name: Serverspec
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/apache:alpine" >> Dockerfile_67b33780217d18.60871477
+        echo "COPY conf/ /" >> Dockerfile_67b33780217d18.60871477
+        bundle install
+        bash serverspec.sh spec/docker/apache_spec.rb webdevops/apache:alpine eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL2FwYWNoZTphbHBpbmUiLCJET0NLRVJfVEFHIjoiYWxwaW5lIiwiT1NfRkFNSUxZIjoiYWxwaW5lIiwiT1NfVkVSU0lPTiI6IiIsIkRPQ0tFUkZJTEUiOiJEb2NrZXJmaWxlXzY3YjMzNzgwMjE3ZDE4LjYwODcxNDc3In0=  Dockerfile_67b33780217d18.60871477
+
+webdevops_base_app_alpine:
+  name: 'webdevops/base-app:alpine'
+  runs-on: ubuntu-latest
+  needs: [webdevops_base_alpine]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/base-app/alpine
+      run: docker build --no-cache -t webdevops/base-app:alpine .
+    - name: Serverspec + Structure tests
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/base-app:alpine" >> Dockerfile_67b337802174b9.60734934
+        echo "COPY conf/ /" >> Dockerfile_67b337802174b9.60734934
+        bundle install
+        bash serverspec.sh spec/docker/base-app_spec.rb webdevops/base-app:alpine eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL2Jhc2UtYXBwOmFscGluZSIsIkRPQ0tFUl9UQUciOiJhbHBpbmUiLCJPU19GQU1JTFkiOiJhbHBpbmUiLCJPU19WRVJTSU9OIjoiIiwiRE9DS0VSRklMRSI6IkRvY2tlcmZpbGVfNjdiMzM3ODAyMTc0YjkuNjA3MzQ5MzQifQ==  Dockerfile_67b337802174b9.60734934
+        cd ../structure-test
+        /usr/local/bin/container-structure-test test --image webdevops/base-app:alpine --config base-app/test.yaml --config base-app/alpine/test.yaml
+
+webdevops_base_app_ubuntu_22_04:
+  name: 'webdevops/base-app:ubuntu-22.04'
+  runs-on: ubuntu-latest
+  needs: [webdevops_base_ubuntu_22_04]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/base-app/ubuntu-22.04
+      run: docker build --no-cache -t webdevops/base-app:ubuntu-22.04 .
+    - name: Serverspec + Structure tests
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/base-app:ubuntu-22.04" >> Dockerfile_67b33780215755.05460809
+        echo "COPY conf/ /" >> Dockerfile_67b33780215755.05460809
+        bundle install
+        bash serverspec.sh spec/docker/base-app_spec.rb webdevops/base-app:ubuntu-22.04 eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL2Jhc2UtYXBwOnVidW50dS0yMi4wNCIsIkRPQ0tFUl9UQUciOiJ1YnVudHUtMjIuMDQiLCJPU19GQU1JTFkiOiJ1YnVudHUiLCJPU19WRVJTSU9OIjoiMjIuMDQiLCJET0NLRVJGSUxFIjoiRG9ja2VyZmlsZV82N2IzMzc4MDIxNTc1NS4wNTQ2MDgwOSJ9  Dockerfile_67b33780215755.05460809
+        cd ../structure-test
+        /usr/local/bin/container-structure-test test --image webdevops/base-app:ubuntu-22.04 --config base-app/test.yaml
+
+webdevops_vsftp_latest:
+  name: 'webdevops/vsftp:latest'
+  runs-on: ubuntu-latest
+  needs: [webdevops_base_ubuntu_22_04]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/vsftp/latest
+      run: docker build --no-cache -t webdevops/vsftp:latest .
+    - name: Serverspec
+      run: |
+        cd tests/serverspec
+        echo "FROM webdevops/vsftp:latest" >> Dockerfile_67b33780216706.35505941
+        echo "COPY conf/ /" >> Dockerfile_67b33780216706.35505941
+        bundle install
+        bash serverspec.sh spec/docker/vsftp_spec.rb webdevops/vsftp:latest eyJET0NLRVJfSU1BR0UiOiJ3ZWJkZXZvcHNcL3ZzZnRwOmxhdGVzdCIsIkRPQ0tFUl9UQUciOiJsYXRlc3QiLCJPU19GQU1JTFkiOiJ1YnVudHUiLCJPU19WRVJTSU9OIjoiMjIuMDQiLCJET0NLRVJGSUxFIjoiRG9ja2VyZmlsZV82N2IzMzc4MDIxNjcwNi4zNTUwNTk0MSJ9  Dockerfile_67b33780216706.35505941
+
+# -------------------------------- STAGE: level5 --------------------------------
+webdevops_dockerfile_build_env_latest:
+  name: 'webdevops/dockerfile-build-env:latest'
+  runs-on: ubuntu-latest
+  needs: [webdevops_base_app_ubuntu_22_04]
+  container: *job_container
+  steps:
+    - uses: actions/checkout@v4
+    - name: Build
+      working-directory: docker/dockerfile-build-env/latest
+      run: docker build --no-cache -t webdevops/dockerfile-build-env:latest .
