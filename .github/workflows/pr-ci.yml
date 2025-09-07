@@ -2,7 +2,7 @@ name: PR CI (mirror of GitLab steps, no push)
 
 on:
   pull_request:
-  workflow_dispatch:
+    branches: [ "master" ]
 
 permissions:
   contents: read
