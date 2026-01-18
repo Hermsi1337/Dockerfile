@@ -173,6 +173,7 @@ RUN set -x \
         gd \
         gettext \
         opcache \
+    && pecl channel-update pecl.php.net \
     && pecl install memcached \
     && pecl install apcu \
     && pecl install excimer \

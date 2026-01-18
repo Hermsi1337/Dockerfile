@@ -137,11 +137,13 @@ RUN set -x \
     # Install new version of ICU
     && curl -sS -o /tmp/icu.tar.gz -L https://github.com/unicode-org/icu/releases/download/release-73-1/icu4c-73_1-src.tgz \
     && tar -zxf /tmp/icu.tar.gz -C /tmp && cd /tmp/icu/source && ./configure --prefix=/usr/local && make && make install && cd / && rm -rf /tmp/icu* \
+    && echo "/usr/local/lib" > /etc/ld.so.conf.d/local.conf \
+    && ldconfig \
     # Install extensions
     && PKG_CONFIG_PATH=/usr/local docker-php-ext-configure intl \
     && docker-php-ext-configure gd --with-jpeg --with-freetype --with-webp \
     && docker-php-ext-configure ldap --with-libdir=lib/x86_64-linux-gnu/ \
-    && PHP_OPENSSL=yes docker-php-ext-configure imap --with-kerberos --with-imap-ssl \    
+    && PHP_OPENSSL=yes docker-php-ext-configure imap --with-kerberos --with-imap-ssl \
     && docker-php-ext-install \
         bcmath \
         bz2 \
@@ -171,7 +173,8 @@ RUN set -x \
         gd \
         gettext \
         opcache \
-    # Install extensions for PHP 7.x
+    # Install extensions for PHP 7.x \
+    && pecl channel-update pecl.php.net \
     && pecl install apcu \
     && printf "no --disable-memcached-sasl\n" | pecl install memcached \
     && echo extension=memcached.so > /usr/local/etc/php/conf.d/memcached.ini \
@@ -179,7 +182,7 @@ RUN set -x \
     && printf "\n" | pecl install vips \
     && echo extension=vips.so > /usr/local/etc/php/conf.d/vips.ini \
     && pecl install redis \
-    && pecl install mongodb \
+    && pecl install mongodb-1.16.2 \
     && pecl install imagick \
     && pecl install amqp \
     && echo extension=apcu.so > /usr/local/etc/php/conf.d/apcu.ini \
