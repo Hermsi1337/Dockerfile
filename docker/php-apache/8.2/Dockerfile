@@ -1,4 +1,5 @@
-FROM ghcr.io/hermsi1337/dockerfile/php:8.2
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 ENV WEB_DOCUMENT_ROOT=/app \
     WEB_DOCUMENT_INDEX=index.php \

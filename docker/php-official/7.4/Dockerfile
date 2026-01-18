@@ -4,7 +4,7 @@
 #+++++++++++++++++++++++++++++++++++++++
 
 
-FROM php:7.4-fpm-buster
+FROM php:7.4-fpm-bullseye
 
 LABEL maintainer=info@webdevops.io \
       vendor=WebDevOps.io \
@@ -38,7 +38,7 @@ RUN set -x \
     && apt-update \
     && /usr/local/bin/generate-dockerimage-info \
     # Enable non-free
-    && sed -ri "s/(deb.*\/debian $(docker-image-info dist-codename) main)/\1 contrib non-free /" -- /etc/apt/sources.list \    
+    && sed -ri "s/(deb.*\/debian $(docker-image-info dist-codename) main)/\1 contrib non-free /" -- /etc/apt/sources.list \
     && apt-update \
     # System update
     && /usr/local/bin/apt-upgrade \
