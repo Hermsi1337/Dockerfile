@@ -98,7 +98,6 @@ RUN set -x \
         libvips42 \
         librabbitmq4 \
         libldap-2.4-2 \
-        zlibc \
         libxslt1.1 \
         libldap-common \
         zlib1g \

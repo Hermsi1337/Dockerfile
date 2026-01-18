@@ -23,7 +23,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        version: ["7.4", "8.1", "8.2", "8.3"]
+        version: ["7.4", "8.1", "8.2", "8.3", "8.4"]
 
     steps:
       - uses: actions/checkout@v4
@@ -47,16 +47,16 @@ jobs:
 
       - name: Build php:${{ matrix.version }} (local sha tag)
         run: |
-          PHP_LOCAL="local/php:${{ matrix.version }}-${{ steps.vars.outputs.sha_short }}"
+          PHP_LOCAL="local-php:${{ matrix.version }}-${{ steps.vars.outputs.sha_short }}"
           cd "docker/php-official/${{ matrix.version }}"
           docker build --no-cache --pull -t "$PHP_LOCAL" .
           echo "PHP_LOCAL=$PHP_LOCAL" >> "$GITHUB_ENV"
 
       - name: Build php-apache:${{ matrix.version }} (FROM local sha tag)
         run: |
-          APACHE_LOCAL="local/php-apache:${{ matrix.version }}-${{ steps.vars.outputs.sha_short }}"
+          APACHE_LOCAL="local-php-apache:${{ matrix.version }}-${{ steps.vars.outputs.sha_short }}"
           cd "docker/php-apache/${{ matrix.version }}"
-          docker build --no-cache --pull \
+          docker build \
             --build-arg BASE_IMAGE="${PHP_LOCAL}" \
             -t "$APACHE_LOCAL" .
           echo "APACHE_LOCAL=$APACHE_LOCAL" >> "$GITHUB_ENV"
