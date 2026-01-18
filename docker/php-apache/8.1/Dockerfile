@@ -1,9 +1,5 @@
-#+++++++++++++++++++++++++++++++++++++++
-# Dockerfile for webdevops/php-apache:8.1
-#    -- automatically generated  --
-#+++++++++++++++++++++++++++++++++++++++
-
-FROM webdevops/php:8.1
+ARG BASE_IMAGE
+FROM ${BASE_IMAGE}
 
 ENV WEB_DOCUMENT_ROOT=/app \
     WEB_DOCUMENT_INDEX=index.php \
@@ -23,7 +19,7 @@ RUN set -x \
         s!^(\s*ErrorLog)\s+\S+!\1 /proc/self/fd/2!g; \
         ' /etc/apache2/apache2.conf \
     && rm -f /etc/apache2/sites-enabled/* \
-    && a2enmod actions proxy proxy_fcgi ssl rewrite headers expires \
+    && a2enmod actions proxy proxy_fcgi ssl rewrite headers expires remoteip \
     && docker-run-bootstrap \
     && docker-image-cleanup
 
