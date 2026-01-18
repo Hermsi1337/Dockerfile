@@ -1,0 +1,99 @@
+name: Build & push Docker images (GHCR, strict)
+
+on:
+  pull_request: {}
+  push:
+    branches: ["master"]
+  workflow_dispatch: {}
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  php:
+    name: Build PHP images (${{ matrix.version }})
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["8.1", "8.2", "8.3"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute image namespace (lowercase)
+        id: ns
+        shell: bash
+        run: |
+          repo_lc="$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')"
+          echo "namespace=${repo_lc}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to GHCR
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build
+        run: |
+          cd "docker/php-official/${{ matrix.version }}"
+          docker build --no-cache --pull -t "webdevops/php:${{ matrix.version }}" .
+
+      - name: Tag & push
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        run: |
+          target="${{ env.REGISTRY }}/${{ steps.ns.outputs.namespace }}/php:${{ matrix.version }}"
+          docker tag "webdevops/php:${{ matrix.version }}" "${target}"
+          docker push "${target}"
+
+  php_apache:
+    name: Build PHP-Apache images (${{ matrix.version }})
+    runs-on: ubuntu-latest
+    needs: [php]
+    permissions:
+      contents: read
+      packages: write
+    strategy:
+      fail-fast: false
+      matrix:
+        version: ["8.1", "8.2", "8.3"]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Compute image namespace (lowercase)
+        id: ns
+        shell: bash
+        run: |
+          repo_lc="$(echo "${GITHUB_REPOSITORY}" | tr '[:upper:]' '[:lower:]')"
+          echo "namespace=${repo_lc}" >> "$GITHUB_OUTPUT"
+
+      - name: Login to GHCR
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Pull dependency image
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        run: |
+          docker pull "${{ env.REGISTRY }}/${{ steps.ns.outputs.namespace }}/php:${{ matrix.version }}"
+
+      - name: Build
+        run: |
+          cd "docker/php-apache/${{ matrix.version }}"
+          docker build --no-cache --pull -t "webdevops/php-apache:${{ matrix.version }}" .
+
+      - name: Tag & push
+        if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/master' }}
+        run: |
+          target="${{ env.REGISTRY }}/${{ steps.ns.outputs.namespace }}/php-apache:${{ matrix.version }}"
+          docker tag "webdevops/php-apache:${{ matrix.version }}" "${target}"
+          docker push "${target}"
