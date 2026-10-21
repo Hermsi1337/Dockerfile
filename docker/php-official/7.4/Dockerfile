@@ -35,6 +35,8 @@ COPY conf/ /opt/docker/
 
 RUN set -x \
     # Init bootstrap
+    # Debian 11 left deb.debian.org, packages are only on archive.debian.org now
+    && sed -ri 's#http://(deb|security)\.debian\.org#http://archive.debian.org#' /etc/apt/sources.list \
     && apt-update \
     && /usr/local/bin/generate-dockerimage-info \
     # Enable non-free
