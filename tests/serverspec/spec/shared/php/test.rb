@@ -13,6 +13,27 @@ shared_examples 'php::cli::test::sha1' do
     end
 end
 
+shared_examples 'php::cli::test::avif' do
+    describe command('php -r \'exit((gd_info()["AVIF Support"] ?? false) ? 0 : 1);\'') do
+        its(:exit_status) { should eq 0 }
+    end
+end
+
+shared_examples 'php::cli::test::imap' do
+    describe command('php -m') do
+        its(:stdout) { should     contain('imap') }
+        its(:stderr) { should_not contain('Unable to load dynamic library') }
+        its(:stderr) { should_not contain('libc-client.so.2007e') }
+        its(:exit_status) { should eq 0 }
+    end
+
+    describe command('php -r \'exit(extension_loaded("imap") ? 0 : 1);\'') do
+        its(:stderr) { should_not contain('Unable to load dynamic library') }
+        its(:stderr) { should_not contain('libc-client.so.2007e') }
+        its(:exit_status) { should eq 0 }
+    end
+end
+
 shared_examples 'php::cli::test::php_ini_scanned_files' do
     describe command('php -r "echo php_ini_scanned_files();"') do
         its(:stdout) { should contain('-docker.ini') }
@@ -27,6 +48,24 @@ shared_examples 'php::cli::test::php_sapi_name' do
         its(:stdout) { should contain('cli') }
 
         its(:exit_status) { should eq 0 }
+    end
+end
+
+shared_examples 'php::fpm::test::session_upload_progress' do
+    ['http', 'https'].each do |scheme|
+        describe "#{scheme} multipart upload with session upload progress disabled" do
+            it 'preserves file uploads and application sessions', :retry => 20, :retry_wait => 3 do
+                cmd = command("curl --insecure --silent --show-error --fail " \
+                    "--form PHP_SESSION_UPLOAD_PROGRESS=serverspec --form file=@/app/pi-number.html " \
+                    "#{scheme}://localhost/php-test.php?test=session_upload_progress")
+                expect(cmd.exit_status).to eq 0
+                expect(JSON.parse(cmd.stdout)).to eq(
+                    'upload_progress_enabled' => false,
+                    'file_uploaded' => true,
+                    'session_persisted' => true
+                )
+            end
+        end
     end
 end
 
@@ -92,7 +131,7 @@ shared_examples 'php::fpm::test::php_ini_scanned_files' do
     end
 end
 
-shared_examples 'php5::fpm::test::version' do
+shared_examples 'php::fpm::test::version' do
     [
         'http://localhost/php-test.php?test=version',
         'https://localhost/php-test.php?test=version'
@@ -105,27 +144,7 @@ shared_examples 'php5::fpm::test::version' do
                 expect(cmd.stdout).not_to contain('PHP Warning')
                 expect(cmd.stdout).not_to contain('Warning')
                 expect(cmd.stdout).not_to contain('Fatal Error')
-                expect(cmd.stdout).to match %r!PHP 5\.[3-9]\.[0-9]{1,2}(-[^\(]*)?!
-                expect(cmd.exit_status).to eq 0
-            end
-        end
-    end
-end
-
-shared_examples 'php7::fpm::test::version' do
-    [
-        'http://localhost/php-test.php?test=version',
-        'https://localhost/php-test.php?test=version'
-    ].each do |url|
-        describe url do
-            it "should have running and answering webserver", :retry => 20, :retry_wait => 3 do
-                cmd = command("curl --insecure --silent --retry 10 --fail #{url}")
-                expect(cmd.stdout).not_to contain('PHP Notice')
-                expect(cmd.stdout).not_to contain('Notice')
-                expect(cmd.stdout).not_to contain('PHP Warning')
-                expect(cmd.stdout).not_to contain('Warning')
-                expect(cmd.stdout).not_to contain('Fatal Error')
-                expect(cmd.stdout).to match %r!PHP (?:7|8)\.[0-9]\.[0-9]{1,2}(-[^\(]*)?!
+                expect(cmd.stdout).to match %r!PHP #{Regexp.escape(ENV.fetch('DOCKER_TAG').split('-', 2).first)}\.[0-9]+(-[^\(]*)?!
                 expect(cmd.exit_status).to eq 0
             end
         end
