@@ -176,17 +176,23 @@ RUN set -x \
         gettext \
         opcache \
     # Install extensions for PHP 7.x \
-    && pecl channel-update pecl.php.net \
-    && pecl install apcu \
-    && printf "no --disable-memcached-sasl\n" | pecl install memcached \
+    # pecl.php.net answers GitHub runners with broken XML, so the PECL releases are built from their GitHub sources
+    && build_php_extension() { \
+        source_url="$1"; shift; \
+        mkdir /tmp/php-extension \
+        && curl -fsSL --retry 3 "$source_url" | tar -xz --strip-components=1 -C /tmp/php-extension \
+        && cd /tmp/php-extension && phpize && ./configure "$@" && make -j"$(nproc)" && make install \
+        && cd / && rm -rf /tmp/php-extension; \
+    } \
+    && build_php_extension https://github.com/krakjoe/apcu/archive/refs/tags/v5.1.28.tar.gz \
+    && build_php_extension https://github.com/php-memcached-dev/php-memcached/archive/refs/tags/v3.4.0.tar.gz --enable-memcached-sasl \
     && echo extension=memcached.so > /usr/local/etc/php/conf.d/memcached.ini \
-    # Install vips (only works with PHP >= 7.0)
-    && printf "\n" | pecl install vips \
+    && build_php_extension https://github.com/libvips/php-vips-ext/archive/refs/heads/master.tar.gz \
     && echo extension=vips.so > /usr/local/etc/php/conf.d/vips.ini \
-    && pecl install redis \
-    && pecl install mongodb-1.16.2 \
-    && pecl install imagick \
-    && pecl install amqp \
+    && build_php_extension https://github.com/phpredis/phpredis/archive/refs/tags/6.3.0.tar.gz \
+    && build_php_extension https://github.com/mongodb/mongo-php-driver/releases/download/1.16.2/mongodb-1.16.2.tgz \
+    && build_php_extension https://github.com/Imagick/imagick/archive/refs/tags/3.8.1.tar.gz \
+    && build_php_extension https://github.com/php-amqp/php-amqp/archive/refs/tags/v2.2.0.tar.gz \
     && echo extension=apcu.so > /usr/local/etc/php/conf.d/apcu.ini \
     && echo extension=redis.so > /usr/local/etc/php/conf.d/redis.ini \
     && echo extension=imagick.so > /usr/local/etc/php/conf.d/imagick.ini \
