@@ -178,7 +178,10 @@ RUN set -x \
     # Install extensions for PHP 7.x \
     && pecl channel-update pecl.php.net \
     && pecl install apcu \
-    && printf "no --disable-memcached-sasl\n" | pecl install memcached \
+    # pecl.php.net REST lookups for memcached fail on GitHub runners, build the same release from GitHub instead
+    && mkdir /tmp/memcached \
+    && curl -fsSL --retry 3 https://github.com/php-memcached-dev/php-memcached/archive/refs/tags/v3.4.0.tar.gz | tar -xz --strip-components=1 -C /tmp/memcached \
+    && cd /tmp/memcached && phpize && ./configure --enable-memcached-sasl && make -j"$(nproc)" && make install && cd / && rm -rf /tmp/memcached \
     && echo extension=memcached.so > /usr/local/etc/php/conf.d/memcached.ini \
     # Install vips (only works with PHP >= 7.0)
     && printf "\n" | pecl install vips \
